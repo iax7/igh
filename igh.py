@@ -12,6 +12,7 @@ LAPSEMINUTES_SAVE_DB = 30
 DB_FILEPATH = 'igreenhouse.db3'
 ARDUINO_FILE = '/dev/ttyUSB0'
 
+
 class TimeController:
     """Contains the time logic to flag to save to the db"""
 
@@ -27,13 +28,14 @@ class TimeController:
         return isTime
 # -----Time Controller
 
+
 class Sqlite:
     def __init__(self):
         try:
             self.db = lite.connect(DB_FILEPATH)
             self.cursor = self.db.cursor()
         except Exception as ex:
-            console.message.print_err("Error Sqlite: " + str(ex) )
+            console.message.print_err("Error Sqlite: " + str(ex))
             sys.exit(1)
 
     def commit(self):
@@ -61,6 +63,7 @@ class Sqlite:
 
         return rows
 
+
 class Arduino:
     def __init__(self):
         self.regex = re.compile(';(([A-Z]*):([0-9.]*))')
@@ -73,7 +76,7 @@ class Arduino:
             self.ser = serial.Serial(ARDUINO_FILE, 9600)
             console.message.print_debug("Arduino initializated!")
         except Exception as ex:
-            console.message.print_err("Error Arduino: " + str(ex) )
+            console.message.print_err("Error Arduino: " + str(ex))
             console.message.print_err("               " + str(type(ex)))
             sys.exit(1)
 
@@ -91,9 +94,7 @@ class Arduino:
 
     @classmethod
     def simulate(cls, integer=0):
-        #RegEx Result=[('SH:145', 'SH', '145'), ('R:1023', 'R', '1023'), ('RT:28.00', 'RT', '28.00'),
-                    #  ('RH:56.00', 'RH', '56.00')]
-        return ';SH:'+str(145+integer)+';R:'+str(1023+integer)+';RT:'+str(28.00+integer)+';RH:'+str(56.00+integer)+''
+        return ';SH:' + str(145 + integer) + ';R:' + str(1023 + integer) + ';RT:' + str(28.00 + integer) + ';RH:' + str(56.00 + integer) + ''
 
     @classmethod
     def avg(cls, list):
@@ -101,36 +102,39 @@ class Arduino:
         for i in list:
             sum += i
 
-        return sum/len(list)
+        return sum / len(list)
+
 
 def main():
     timeController = TimeController()
     arduino = Arduino()
     while True:
-        arduino_raw = arduino.readln() #Arduino.simulate()
+        arduino_raw = arduino.readln()
+        # Arduino.simulate()
         regex_result = arduino.regex.findall(arduino_raw)
         print arduino_raw
 
         for tuple in regex_result:
-            #console.message.print_debug(tuple)
+            # console.message.print_debug(tuple)
             arduino.dictionary[tuple[1]].append(float(tuple[2]))
 
-        #If LAPSEMINUTES_SAVE_DB is met save & reset
+        # If LAPSEMINUTES_SAVE_DB is met save & reset
         if timeController.isTimeToSaveDB():
             console.message.print_debug("Time to save to DB " + str(datetime.datetime.now()))
             arduino.values_average()
             console.message.print_debug('Avg:' + str(arduino.dictionary))
 
-            gh = [1, datetime.datetime.now(), arduino.dictionary['RT'], arduino.dictionary['RH'],arduino.dictionary['R']]
+            gh = [1, datetime.datetime.now(), arduino.dictionary['RT'], arduino.dictionary['RH'], arduino.dictionary['R']]
             sh = [1, datetime.datetime.now(), arduino.dictionary['SH']]
-            #save to db
+            # save to db
             sql = Sqlite()
             sql.cursor.execute("INSERT INTO ghdata('ghId','Measured','Temperature','Humidity','Rain') VALUES (?,?,?,?,?)", gh)
             sql.cursor.execute("INSERT INTO soil('PotId','Measured','Humidity') VALUES (?,?,?)", sh)
             sql.commit()
-            arduino.clear() #Resets arduino values
+            arduino.clear()
+            # Resets arduino values
 
-        #print ".",
+        # print ".",
         time.sleep(SLEEP_TIME)
 
 if __name__ == "__main__":
