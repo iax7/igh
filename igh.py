@@ -131,8 +131,8 @@ def main():
             sql.cursor.execute("INSERT INTO ghdata('ghId','Measured','Temperature','Humidity','Rain') VALUES (?,?,?,?,?)", gh)
             sql.cursor.execute("INSERT INTO soil('PotId','Measured','Humidity') VALUES (?,?,?)", sh)
             sql.commit()
-            arduino.clear()
             # Resets arduino values
+            arduino.clear()
 
         # print ".",
         time.sleep(SLEEP_TIME)
